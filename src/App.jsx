@@ -1,121 +1,71 @@
 import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from './assets/vite.svg'
-import heroImg from './assets/hero.png'
 import './App.css'
+import { INITIAL_KILL_SWITCH, RECOMMENDATIONS, PERMISSIONS, LOGS } from '@/data/railData'
+import TrainLineMap from '@/components/dashboard/TrainLineMap/TrainLineMap'
+import KillSwitchPanel from '@/components/dashboard/KillSwitchPanel/KillSwitchPanel'
+import RecommendationsPanel from '@/components/dashboard/RecommendationsPanel/RecommendationsPanel'
+import LogsPanel from '@/components/dashboard/LogsPanel/LogsPanel'
 
-function App() {
-  const [count, setCount] = useState(0)
+export default function App() {
+  const [killState, setKillState] = useState(INITIAL_KILL_SWITCH)
+  const [logs, setLogs] = useState(LOGS)
+
+  function handleKill() {
+    const now = new Date()
+    const ts = now.toTimeString().slice(0, 8)
+    setKillState((prev) => ({ ...prev, killed: true, killedAt: now.toISOString() }))
+    setLogs((prev) => [
+      ...prev,
+      {
+        id: `L-${Date.now()}`,
+        timestamp: ts,
+        level: 'ERROR',
+        source: 'SYS',
+        message: 'Kill switch activated — all services halted',
+      },
+    ])
+  }
+
+  function handleRestore() {
+    const now = new Date()
+    const ts = now.toTimeString().slice(0, 8)
+    setKillState((prev) => ({ ...prev, killed: false }))
+    setLogs((prev) => [
+      ...prev,
+      {
+        id: `L-${Date.now()}`,
+        timestamp: ts,
+        level: 'INFO',
+        source: 'SYS',
+        message: 'Service restored by operator',
+      },
+    ])
+  }
+
+  function handleReasonChange(reason) {
+    setKillState((prev) => ({ ...prev, reason }))
+  }
 
   return (
-    <>
-      <section id="center">
-        <div className="hero">
-          <img src={heroImg} className="base" width="170" height="179" alt="" />
-          <img src={reactLogo} className="framework" alt="React logo" />
-          <img src={viteLogo} className="vite" alt="Vite logo" />
-        </div>
-        <div>
-          <h1>Get started</h1>
-          <p>
-            Edit <code>src/App.jsx</code> and save to test <code>HMR</code>
-          </p>
-        </div>
-        <button
-          className="counter"
-          onClick={() => setCount((count) => count + 1)}
-        >
-          Count is {count}
-        </button>
-      </section>
+    <div className="w-screen h-screen grid grid-rows-[2fr_3fr] gap-2 p-2 overflow-hidden">
+      {/* Row 1: Train line map */}
+      <TrainLineMap />
 
-      <div className="ticks"></div>
-
-      <section id="next-steps">
-        <div id="docs">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#documentation-icon"></use>
-          </svg>
-          <h2>Documentation</h2>
-          <p>Your questions, answered</p>
-          <ul>
-            <li>
-              <a href="https://vite.dev/" target="_blank">
-                <img className="logo" src={viteLogo} alt="" />
-                Explore Vite
-              </a>
-            </li>
-            <li>
-              <a href="https://react.dev/" target="_blank">
-                <img className="button-icon" src={reactLogo} alt="" />
-                Learn more
-              </a>
-            </li>
-          </ul>
-        </div>
-        <div id="social">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#social-icon"></use>
-          </svg>
-          <h2>Connect with us</h2>
-          <p>Join the Vite community</p>
-          <ul>
-            <li>
-              <a href="https://github.com/vitejs/vite" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#github-icon"></use>
-                </svg>
-                GitHub
-              </a>
-            </li>
-            <li>
-              <a href="https://chat.vite.dev/" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#discord-icon"></use>
-                </svg>
-                Discord
-              </a>
-            </li>
-            <li>
-              <a href="https://x.com/vite_js" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#x-icon"></use>
-                </svg>
-                X.com
-              </a>
-            </li>
-            <li>
-              <a href="https://bsky.app/profile/vite.dev" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#bluesky-icon"></use>
-                </svg>
-                Bluesky
-              </a>
-            </li>
-          </ul>
-        </div>
-      </section>
-
-      <div className="ticks"></div>
-      <section id="spacer"></section>
-    </>
+      {/* Row 2: Three bottom panels */}
+      <div className="grid grid-cols-[200px_1fr_220px] gap-2 min-h-0">
+        <KillSwitchPanel
+          killed={killState.killed}
+          reason={killState.reason}
+          onKill={handleKill}
+          onRestore={handleRestore}
+          onReasonChange={handleReasonChange}
+        />
+        <RecommendationsPanel
+          recommendations={RECOMMENDATIONS}
+          permissions={PERMISSIONS}
+        />
+        <LogsPanel logs={logs} />
+      </div>
+    </div>
   )
 }
-
-export default App
