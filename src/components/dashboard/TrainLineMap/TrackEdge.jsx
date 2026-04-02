@@ -1,19 +1,19 @@
-import { getBezierPath } from '@xyflow/react'
+import { getStraightPath } from "@xyflow/react";
 
 export default function TrackEdge({
   id,
-  sourceX, sourceY,
-  targetX, targetY,
-  sourcePosition,
-  targetPosition,
+  sourceX,
+  sourceY,
+  targetX,
+  targetY,
   data,
 }) {
-  const [edgePath] = getBezierPath({ sourceX, sourceY, sourcePosition, targetX, targetY, targetPosition })
+  const [edgePath] = getStraightPath({ sourceX, sourceY, targetX, targetY });
 
-  const active = data?.active
-  const stroke = active ? '#f97316' : '#2a3045'
-  const strokeDash = active ? undefined : '6 4'
-  const strokeWidth = active ? 2.5 : 1.5
+  const hazard = data?.hazard;
+  const stroke = hazard ? "#dc2626" : "#2a3045";
+  const strokeDash = hazard ? undefined : "6 4";
+  const strokeWidth = hazard ? 2.5 : 1.5;
 
   return (
     <g>
@@ -27,5 +27,5 @@ export default function TrackEdge({
         strokeLinecap="round"
       />
     </g>
-  )
+  );
 }
