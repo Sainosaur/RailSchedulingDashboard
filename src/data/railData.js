@@ -5,7 +5,7 @@ export const STATIONS = [
     name: "Harbour Central",
     status: "alert",
     x: 60,
-    y: 140,
+    y: 0,
   },
   {
     id: "H02",
@@ -13,7 +13,7 @@ export const STATIONS = [
     name: "North Quay",
     status: "alert",
     x: 220,
-    y: 70,
+    y: 00,
   },
   {
     id: "H03",
@@ -21,7 +21,7 @@ export const STATIONS = [
     name: "Riverside",
     status: "warning",
     x: 390,
-    y: 50,
+    y: 0,
   },
   {
     id: "H04",
@@ -29,7 +29,7 @@ export const STATIONS = [
     name: "Central Exchange",
     status: "alert",
     x: 560,
-    y: 100,
+    y: 0,
   },
   {
     id: "H05",
@@ -37,7 +37,7 @@ export const STATIONS = [
     name: "Uptown West",
     status: "normal",
     x: 720,
-    y: 55,
+    y: 0,
   },
   {
     id: "H06",
@@ -45,7 +45,7 @@ export const STATIONS = [
     name: "Terminal South",
     status: "warning",
     x: 880,
-    y: 120,
+    y: 0,
   },
 ];
 

@@ -1,5 +1,7 @@
 import PanelShell from "@/components/layout/PanelShell";
 import { STATIONS, SEGMENTS, TRAINS } from "@/data/railData";
+import getAll from "../../../services/graph";
+import { useState, useEffect } from "react";
 
 const SIGNAL_COLOR = {
   green: "#22c55e",
@@ -13,8 +15,15 @@ function lerp(a, b, t) {
 }
 
 export default function TrainLineMap() {
+  const [stations, setStations] = useState([]);
   const stationMap = Object.fromEntries(STATIONS.map((s) => [s.id, s]));
   const segmentMap = Object.fromEntries(SEGMENTS.map((s) => [s.id, s]));
+  useEffect(() => {
+    getAll().then((data) => {
+      const dataArr = Object.values(data.graph._node);
+      setStations(dataArr.map((s) => s.data));
+    });
+  }, []);
 
   const legend = (
     <div className="flex items-center gap-4 text-[10px] font-mono text-[var(--dash-text)] uppercase tracking-widest">
@@ -94,19 +103,19 @@ export default function TrainLineMap() {
           })}
 
           {/* Stations */}
-          {STATIONS.map((s) => (
-            <g key={s.id}>
+          {stations.map((s) => (
+            <g key={s.position}>
               <circle
-                cx={s.x}
-                cy={s.y}
+                cx={s.distance * 12 + 20}
+                cy={s.elevation / 10}
                 r={5}
                 fill="#c8d0de"
                 stroke="#2a3045"
                 strokeWidth={1.5}
               />
               <text
-                x={s.x}
-                y={s.y + 17}
+                x={s.distance * 12 + 20}
+                y={s.elevation / 10 + 17}
                 textAnchor="middle"
                 fill="#c8d0de"
                 fontSize={9}
@@ -114,7 +123,7 @@ export default function TrainLineMap() {
                 letterSpacing="0.1em"
                 style={{ userSelect: "none" }}
               >
-                {s.label}
+                {s.name}
               </text>
             </g>
           ))}
@@ -162,8 +171,10 @@ export default function TrainLineMap() {
 
                 {/* Stem from label to signal dot */}
                 <line
-                  x1={0} y1={-15}
-                  x2={0} y2={-4}
+                  x1={0}
+                  y1={-15}
+                  x2={0}
+                  y2={-4}
                   stroke={color}
                   strokeWidth={1}
                   strokeOpacity={0.35}
@@ -172,11 +183,29 @@ export default function TrainLineMap() {
                 {/* Signal dot(s) ON the track */}
                 {isDoubleAmber ? (
                   <>
-                    <circle cx={-4} cy={0} r={3} fill={color} filter="url(#sig-glow)" />
-                    <circle cx={4}  cy={0} r={3} fill={color} filter="url(#sig-glow)" />
+                    <circle
+                      cx={-4}
+                      cy={0}
+                      r={3}
+                      fill={color}
+                      filter="url(#sig-glow)"
+                    />
+                    <circle
+                      cx={4}
+                      cy={0}
+                      r={3}
+                      fill={color}
+                      filter="url(#sig-glow)"
+                    />
                   </>
                 ) : (
-                  <circle cx={0} cy={0} r={3} fill={color} filter="url(#sig-glow)" />
+                  <circle
+                    cx={0}
+                    cy={0}
+                    r={3}
+                    fill={color}
+                    filter="url(#sig-glow)"
+                  />
                 )}
 
                 {/* Speed below */}
