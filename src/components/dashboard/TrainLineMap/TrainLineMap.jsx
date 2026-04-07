@@ -16,12 +16,23 @@ function lerp(a, b, t) {
 
 export default function TrainLineMap() {
   const [stations, setStations] = useState([]);
-  const stationMap = Object.fromEntries(STATIONS.map((s) => [s.id, s]));
+  const [stationMap, setStationsMap] = useState({});
+  const [segments, setSegments] = useState([]);
   const segmentMap = Object.fromEntries(SEGMENTS.map((s) => [s.id, s]));
   useEffect(() => {
     getAll().then((data) => {
       const dataArr = Object.values(data.graph._node);
+      setStationsMap(data.graph._node);
       setStations(dataArr.map((s) => s.data));
+      const segmentArr = Object.values(data.graph._adj);
+      setSegments(
+        segmentArr
+          .map((seg) => {
+            const segArray = Object.values(seg);
+            return segArray[0].data;
+          })
+          .filter((x, y) => y != 0),
+      );
     });
   }, []);
 
@@ -83,17 +94,17 @@ export default function TrainLineMap() {
           </defs>
 
           {/* Track segments */}
-          {SEGMENTS.map((seg) => {
-            const src = stationMap[seg.source];
-            const tgt = stationMap[seg.target];
+          {segments.map((seg) => {
+            const src = stationMap[seg.start_station.name];
+            const tgt = stationMap[seg.end_station.name];
             if (!src || !tgt) return null;
             return (
               <line
-                key={seg.id}
-                x1={src.x}
-                y1={src.y}
-                x2={tgt.x}
-                y2={tgt.y}
+                key={src.data.position}
+                x1={src.data.distance * 12 + 20}
+                y1={src.data.elevation / 10}
+                x2={tgt.data.distance * 12 + 20}
+                y2={tgt.data.elevation / 10}
                 stroke={seg.hazard ? "#dc2626" : "#2a3045"}
                 strokeWidth={seg.hazard ? 2.5 : 1.5}
                 strokeDasharray={seg.hazard ? undefined : "6 4"}
