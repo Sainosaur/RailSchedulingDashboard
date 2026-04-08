@@ -21,18 +21,10 @@ export default function TrainLineMap() {
   const segmentMap = Object.fromEntries(SEGMENTS.map((s) => [s.id, s]));
   useEffect(() => {
     getAll().then((data) => {
-      const dataArr = Object.values(data.graph._node);
-      setStationsMap(data.graph._node);
-      setStations(dataArr.map((s) => s.data));
-      const segmentArr = Object.values(data.graph._adj);
-      setSegments(
-        segmentArr
-          .map((seg) => {
-            const segArray = Object.values(seg);
-            return segArray[0].data;
-          })
-          .filter((x, y) => y != 0),
-      );
+      setStationsMap(data.graph.nodes);
+      setStations(data.graph.nodes);
+      const segmentArr = Object.values(data.graph.edges);
+      setSegments(segmentArr);
     });
   }, []);
 
@@ -95,18 +87,20 @@ export default function TrainLineMap() {
 
           {/* Track segments */}
           {segments.map((seg) => {
-            const src = stationMap[seg.start_station.name];
-            const tgt = stationMap[seg.end_station.name];
+            const src = seg.start_station;
+            console.log(src);
+            const tgt = seg.end_station;
+            console.log(tgt);
             if (!src || !tgt) return null;
             return (
               <line
-                key={src.data.position}
-                x1={src.data.distance * 12 + 20}
-                y1={src.data.elevation / 10}
-                x2={tgt.data.distance * 12 + 20}
-                y2={tgt.data.elevation / 10}
+                key={src.position}
+                x1={src.distance * 12 + 20}
+                y1={src.elevation / 10}
+                x2={tgt.distance * 12 + 20}
+                y2={tgt.elevation / 10}
                 stroke={seg.hazard ? "#dc2626" : "#2a3045"}
-                strokeWidth={seg.hazard ? 2.5 : 1.5}
+                strokeWidth={seg.hazard ? 3.5 : 1.5}
                 strokeDasharray={seg.hazard ? undefined : "6 4"}
                 strokeLinecap="round"
               />
