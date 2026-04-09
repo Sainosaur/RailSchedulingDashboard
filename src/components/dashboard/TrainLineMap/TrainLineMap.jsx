@@ -1,5 +1,5 @@
 import PanelShell from "@/components/layout/PanelShell";
-import { STATIONS, SEGMENTS, TRAINS } from "@/data/railData";
+import { SEGMENTS, TRAINS } from "@/data/railData";
 import getAll from "../../../services/graph";
 import { useState, useEffect } from "react";
 
@@ -91,23 +91,86 @@ export default function TrainLineMap() {
             </filter>
           </defs>
 
-          {/* Track segments */}
+          {/* Track segments with block boundaries */}
           {segments.map((seg) => {
             const src = seg.start_station;
             const tgt = seg.end_station;
             if (!src || !tgt) return null;
+
+            const srcX = src.distance * 12 + 20,
+              srcY = src.elevation / 10;
+            const tgtX = tgt.distance * 12 + 20,
+              tgtY = tgt.elevation / 10;
+
+            if (!seg.block_boundaries?.length) {
+              return (
+                <line
+                  key={src.position}
+                  x1={srcX}
+                  y1={srcY}
+                  x2={tgtX}
+                  y2={tgtY}
+                  stroke="#2a3045"
+                  strokeWidth={1.5}
+                  strokeDasharray="6 4"
+                  strokeLinecap="round"
+                />
+              );
+            }
+
+            const segStartM = src.distance * 1000;
+            const segEndM = tgt.distance * 1000;
+
+            const distToSVG = (d) => {
+              const t = (d - segStartM) / (segEndM - segStartM);
+              return { x: lerp(srcX, tgtX, t), y: lerp(srcY, tgtY, t) };
+            };
+
+            const dx = tgtX - srcX,
+              dy = tgtY - srcY;
+            const len = Math.sqrt(dx * dx + dy * dy);
+            const nx = len > 0 ? -dy / len : 0;
+            const ny = len > 0 ? dx / len : 1;
+            const TICK = 7;
+
             return (
-              <line
-                key={src.position}
-                x1={src.distance * 12 + 20}
-                y1={src.elevation / 10}
-                x2={tgt.distance * 12 + 20}
-                y2={tgt.elevation / 10}
-                stroke={seg.hazard ? "#dc2626" : "#2a3045"}
-                strokeWidth={seg.hazard ? 3.5 : 1.5}
-                strokeDasharray={seg.hazard ? undefined : "6 4"}
-                strokeLinecap="round"
-              />
+              <g key={src.position}>
+                {seg.block_boundaries.map((block, i) => {
+                  const p1 = distToSVG(block.start);
+                  const p2 = distToSVG(block.end);
+                  const hazard = seg.hazard || block.hazard;
+                  return (
+                    <line
+                      key={i}
+                      x1={p1.x}
+                      y1={p1.y}
+                      x2={p2.x}
+                      y2={p2.y}
+                      stroke={hazard ? "#dc2626" : "#2a3045"}
+                      strokeWidth={1}
+                      strokeDasharray={hazard ? undefined : "6 4"}
+                      strokeLinecap="round"
+                    />
+                  );
+                })}
+                {seg.block_boundaries.map((block, i) => {
+                  if (i === 0) return null;
+                  const p = distToSVG(block.start);
+                  const isHazard =
+                    block.hazard || seg.block_boundaries[i - 1]?.hazard;
+                  return (
+                    <line
+                      key={`t${i}`}
+                      x1={p.x - nx * TICK}
+                      y1={p.y - ny * TICK}
+                      x2={p.x + nx * TICK}
+                      y2={p.y + ny * TICK}
+                      stroke={isHazard ? "#dc2626" : "#3a4055"}
+                      strokeWidth={isHazard ? 2 : 0.05}
+                    />
+                  );
+                })}
+              </g>
             );
           })}
 

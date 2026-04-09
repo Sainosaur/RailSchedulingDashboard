@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import "./App.css";
 import {
   INITIAL_KILL_SWITCH,
@@ -6,6 +6,12 @@ import {
   PERMISSIONS,
   LOGS,
 } from "@/data/railData";
+
+import {
+  killServer,
+  restoreServer,
+  getKillStatus,
+} from "@/services/killSwitch";
 import TrainLineMap from "@/components/dashboard/TrainLineMap/TrainLineMap";
 import KillSwitchPanel from "@/components/dashboard/KillSwitchPanel/KillSwitchPanel";
 import RecommendationsPanel from "@/components/dashboard/RecommendationsPanel/RecommendationsPanel";
@@ -17,40 +23,76 @@ export default function App() {
   const [logs, setLogs] = useState(LOGS);
   const [recommendations, setRecommendations] = useState(RECOMMENDATIONS);
 
-  function handleKill() {
+  useEffect(() => {
+    getKillStatus().then((status) => {
+      setKillState(status);
+    });
+  }, []);
+
+  const handleKill = () => {
     const now = new Date();
     const ts = now.toTimeString().slice(0, 8);
-    setKillState((prev) => ({
-      ...prev,
-      killed: true,
-      killedAt: now.toISOString(),
-    }));
-    setLogs((prev) => [
-      ...prev,
-      {
-        id: `L-${Date.now()}`,
-        timestamp: ts,
-        level: "ERROR",
-        source: "SYS",
-        message: "Kill switch activated — all services halted",
-      },
-    ]);
-  }
+    killServer()
+      .then(() => {
+        setKillState((prev) => ({
+          ...prev,
+          killed: true,
+        }));
+        setLogs((prev) => [
+          ...prev,
+          {
+            id: `L-${Date.now()}`,
+            timestamp: ts,
+            level: "ERROR",
+            source: "SYS",
+            message: "Kill switch activated — all services halted",
+          },
+        ]);
+      })
+      .catch(() => {
+        setLogs([
+          {
+            id: `L-${Date.now()}`,
+            timestamp: ts,
+            level: "ERROR",
+            source: "SYS",
+            message: "Catostrophic Connection Failure!",
+          },
+        ]);
+      });
+  };
 
   function handleRestore() {
     const now = new Date();
     const ts = now.toTimeString().slice(0, 8);
-    setKillState((prev) => ({ ...prev, killed: false }));
-    setLogs((prev) => [
-      ...prev,
-      {
-        id: `L-${Date.now()}`,
-        timestamp: ts,
-        level: "INFO",
-        source: "SYS",
-        message: "Service restored by operator",
-      },
-    ]);
+    restoreServer()
+      .then(() => {
+        setKillState((prev) => ({
+          ...prev,
+          killed: false,
+        }));
+        setLogs((prev) => [
+          ...prev,
+          {
+            id: `L-${Date.now()}`,
+            timestamp: ts,
+            level: "INFO",
+            source: "SYS",
+            message: "Service restored by operator",
+          },
+        ]);
+      })
+      .catch(() => {
+        setLogs([
+          {
+            id: `L-${Date.now()}`,
+            timestamp: ts,
+            level: "ERROR",
+            source: "SYS",
+            message: "Catostrophic Connection Failure!",
+          },
+        ]);
+      });
   }
 
   function handleReasonChange(reason) {

@@ -1,54 +1,3 @@
-export const STATIONS = [
-  {
-    id: "H01",
-    label: "H01",
-    name: "Harbour Central",
-    status: "alert",
-    x: 60,
-    y: 0,
-  },
-  {
-    id: "H02",
-    label: "H2",
-    name: "North Quay",
-    status: "alert",
-    x: 220,
-    y: 00,
-  },
-  {
-    id: "H03",
-    label: "H03",
-    name: "Riverside",
-    status: "warning",
-    x: 390,
-    y: 0,
-  },
-  {
-    id: "H04",
-    label: "H04",
-    name: "Central Exchange",
-    status: "alert",
-    x: 560,
-    y: 0,
-  },
-  {
-    id: "H05",
-    label: "H05",
-    name: "Uptown West",
-    status: "normal",
-    x: 720,
-    y: 0,
-  },
-  {
-    id: "H06",
-    label: "H06",
-    name: "Terminal South",
-    status: "warning",
-    x: 880,
-    y: 0,
-  },
-];
-
 export const SEGMENTS = [
   { id: "seg-H01-H02", source: "H01", target: "H02", hazard: false },
   { id: "seg-H02-H03", source: "H02", target: "H03", hazard: false },
@@ -58,12 +7,8 @@ export const SEGMENTS = [
 ];
 
 export const INITIAL_KILL_SWITCH = {
-  killed: false,
-  killedAt: "2026-04-01T08:14:22Z",
-  killedBy: "Operator A",
-  reason:
-    "Unexpected signal failure on segment H03–H04. Trains halted as precaution pending inspection.",
-  affectedStation: "H01",
+  killed: true,
+  reason: "Awaiting Server Connection",
 };
 
 export const RECOMMENDATIONS = [
