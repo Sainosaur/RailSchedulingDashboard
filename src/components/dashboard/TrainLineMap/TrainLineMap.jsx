@@ -10,6 +10,8 @@ const SIGNAL_COLOR = {
   red: "#ef4444",
 };
 
+const socket = new WebSocket("ws://localhost:8000/ws/graph");
+
 function lerp(a, b, t) {
   return a + t * (b - a);
 }
@@ -19,14 +21,18 @@ export default function TrainLineMap() {
   const [stationMap, setStationsMap] = useState({});
   const [segments, setSegments] = useState([]);
   const segmentMap = Object.fromEntries(SEGMENTS.map((s) => [s.id, s]));
-  useEffect(() => {
-    getAll().then((data) => {
-      setStationsMap(data.graph.nodes);
-      setStations(data.graph.nodes);
-      const segmentArr = Object.values(data.graph.edges);
-      setSegments(segmentArr);
-    });
-  }, []);
+
+  socket.addEventListener("open", () => {
+    console.log("Backend connected");
+  });
+  socket.addEventListener("message", (event) => {
+    console.log("Graph Updated!");
+    const data = JSON.parse(event.data);
+    setStationsMap(data.graph.nodes);
+    setStations(data.graph.nodes);
+    const segmentArr = Object.values(data.graph.edges);
+    setSegments(segmentArr);
+  });
 
   const legend = (
     <div className="flex items-center gap-4 text-[10px] font-mono text-[var(--dash-text)] uppercase tracking-widest">
@@ -88,9 +94,7 @@ export default function TrainLineMap() {
           {/* Track segments */}
           {segments.map((seg) => {
             const src = seg.start_station;
-            console.log(src);
             const tgt = seg.end_station;
-            console.log(tgt);
             if (!src || !tgt) return null;
             return (
               <line
