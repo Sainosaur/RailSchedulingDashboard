@@ -1,6 +1,6 @@
 import PanelShell from "@/components/layout/PanelShell";
 import { SEGMENTS, TRAINS } from "@/data/railData";
-import getAll from "../../../services/graph";
+import getAll from "@/services/trains";
 import { useState, useEffect } from "react";
 
 const SIGNAL_COLOR = {
@@ -12,6 +12,7 @@ const SIGNAL_COLOR = {
 
 const socket = new WebSocket("ws://localhost:8000/ws/graph");
 
+
 function lerp(a, b, t) {
   return a + t * (b - a);
 }
@@ -20,6 +21,7 @@ export default function TrainLineMap() {
   const [stations, setStations] = useState([]);
   const [stationMap, setStationsMap] = useState({});
   const [segments, setSegments] = useState([]);
+  const [trains, setTrains] = useState([])
   const segmentMap = Object.fromEntries(SEGMENTS.map((s) => [s.id, s]));
 
   socket.addEventListener("open", () => {
@@ -201,7 +203,7 @@ export default function TrainLineMap() {
           ))}
 
           {/* Trains */}
-          {TRAINS.map((train) => {
+          {trains.map((train) => {
             const seg = segmentMap[train.segment];
             if (!seg) return null;
             const src = stationMap[seg.source];

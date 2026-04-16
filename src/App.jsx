@@ -17,6 +17,7 @@ import KillSwitchPanel from "@/components/dashboard/KillSwitchPanel/KillSwitchPa
 import RecommendationsPanel from "@/components/dashboard/RecommendationsPanel/RecommendationsPanel";
 import ApprovalsPanel from "@/components/dashboard/ApprovalsPanel/ApprovalsPanel";
 import LogsPanel from "@/components/dashboard/LogsPanel/LogsPanel";
+import SimulationControlPanel from "@/components/dashboard/SimulationControlPanel/SimulationControlPanel";
 
 export default function App() {
   const [killState, setKillState] = useState(INITIAL_KILL_SWITCH);
@@ -143,7 +144,8 @@ export default function App() {
       <TrainLineMap />
 
       {/* Row 2: Four bottom panels */}
-      <div className="grid grid-cols-[250px_1fr_450px_450px] gap-2 min-h-0">
+      <div className="grid grid-cols-[250px_200px_1fr_450px_450px] gap-2 min-h-0">
+        <SimulationControlPanel />
         <KillSwitchPanel
           killed={killState.killed}
           reason={killState.reason}

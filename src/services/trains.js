@@ -1,6 +1,6 @@
 import axios from "axios";
 
-const BASE_URL = "http://localhost:8000/api/dashboard/graph";
+const BASE_URL = "http://localhost:8000/api/dashboard/trains";
 
 const getAll = async () => {
   const response = await axios.get(BASE_URL);
