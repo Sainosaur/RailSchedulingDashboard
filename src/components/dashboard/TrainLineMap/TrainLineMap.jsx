@@ -1,7 +1,5 @@
 import PanelShell from "@/components/layout/PanelShell";
-import { SEGMENTS, TRAINS } from "@/data/railData";
-import getAll from "@/services/trains";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 
 const SIGNAL_COLOR = {
   green: "#22c55e",
@@ -10,24 +8,22 @@ const SIGNAL_COLOR = {
   red: "#ef4444",
 };
 
-const socket = new WebSocket("ws://localhost:8000/ws/graph");
-
+const graphSocket = new WebSocket("ws://localhost:8000/ws/graph");
 
 function lerp(a, b, t) {
   return a + t * (b - a);
 }
 
-export default function TrainLineMap() {
+export default function TrainLineMap({ trains }) {
   const [stations, setStations] = useState([]);
   const [stationMap, setStationsMap] = useState({});
   const [segments, setSegments] = useState([]);
-  const [trains, setTrains] = useState([])
-  const segmentMap = Object.fromEntries(SEGMENTS.map((s) => [s.id, s]));
+  const segmentMap = Object.fromEntries(segments.map((s) => [s.id, s]));
 
-  socket.addEventListener("open", () => {
-    console.log("Backend connected");
+  graphSocket.addEventListener("open", () => {
+    console.log("Backend connected (Graph)");
   });
-  socket.addEventListener("message", (event) => {
+  graphSocket.addEventListener("message", (event) => {
     console.log("Graph Updated!");
     const data = JSON.parse(event.data);
     setStationsMap(data.graph.nodes);
@@ -204,19 +200,18 @@ export default function TrainLineMap() {
 
           {/* Trains */}
           {trains.map((train) => {
-            const seg = segmentMap[train.segment];
+            const seg = segments[train.segment];
             if (!seg) return null;
-            const src = stationMap[seg.source];
-            const tgt = stationMap[seg.target];
+            const src = stations[train.segment];
+            const tgt = stations[train.segment + 1];
             if (!src || !tgt) return null;
-
-            const x = lerp(src.x, tgt.x, train.progress);
-            const y = lerp(src.y, tgt.y, train.progress);
+            const x = lerp(src.distance * 12 + 20, tgt.distance * 12 + 20, train.progress);
+            const y = lerp(src.elevation / 10, tgt.elevation / 10, train.progress);
+            console.log(x, y)
             const color = SIGNAL_COLOR[train.signal] ?? "#22c55e";
             const isDoubleAmber = train.signal === "double-amber";
-
             return (
-              <g key={train.id} transform={`translate(${x}, ${y})`}>
+              <g key={trains.indexOf(train)} transform={`translate(${x}, ${y})`}>
                 {/* Train label above track */}
                 <rect
                   x={-17}
@@ -240,7 +235,7 @@ export default function TrainLineMap() {
                   letterSpacing="0.08em"
                   style={{ userSelect: "none" }}
                 >
-                  {train.id}
+                  {train.id || (trains.indexOf(train) === 0 ? "LEAD" : "AI")}
                 </text>
 
                 {/* Stem from label to signal dot */}
@@ -293,7 +288,7 @@ export default function TrainLineMap() {
                   letterSpacing="0.04em"
                   style={{ userSelect: "none" }}
                 >
-                  {train.speed} km/h
+                  {train.speed_kmh !== undefined ? Math.round(train.speed_kmh) : 0} km/h
                 </text>
               </g>
             );

@@ -19,10 +19,22 @@ import ApprovalsPanel from "@/components/dashboard/ApprovalsPanel/ApprovalsPanel
 import LogsPanel from "@/components/dashboard/LogsPanel/LogsPanel";
 import SimulationControlPanel from "@/components/dashboard/SimulationControlPanel/SimulationControlPanel";
 
+const simSocket = new WebSocket("ws://localhost:8000/ws/sim");
+
 export default function App() {
   const [killState, setKillState] = useState(INITIAL_KILL_SWITCH);
   const [logs, setLogs] = useState(LOGS);
   const [recommendations, setRecommendations] = useState(RECOMMENDATIONS);
+  const [trains, setTrains] = useState([])
+
+  simSocket.addEventListener("open", () => {
+    console.log("Backend connected (Simulation)")
+  })
+  simSocket.addEventListener("message", (event) => {
+    const data = JSON.parse(event.data)
+    const trainArr = [data.lead, data.ai]
+    setTrains(trainArr)
+  })
 
   useEffect(() => {
     getKillStatus().then((status) => {
@@ -141,7 +153,7 @@ export default function App() {
   return (
     <div className="w-screen h-screen grid grid-rows-[2fr_3fr] gap-2 p-2 overflow-hidden">
       {/* Row 1: Train line map */}
-      <TrainLineMap />
+      <TrainLineMap trains={trains} />
 
       {/* Row 2: Four bottom panels */}
       <div className="grid grid-cols-[250px_200px_1fr_450px_450px] gap-2 min-h-0">
