@@ -13,4 +13,9 @@ const stopSimulation = async () => {
     return res.data;
 }
 
-export { startSimulation, stopSimulation };
+const simStatus = async () => {
+    const res = await axios.get(`${BASE_URL}/status`);
+    return res.data;
+}
+
+export { startSimulation, stopSimulation, simStatus };

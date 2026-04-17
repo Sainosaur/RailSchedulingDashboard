@@ -69,8 +69,8 @@ export default function TrainLineMap({ trains }) {
 
   return (
     <PanelShell
-      title="Line"
-      badge="H01 → H06"
+      title="AI Simulation Control and Observation Panel"
+      badge="LINE 104"
       actions={legend}
       className="w-full h-full"
     >
@@ -207,7 +207,6 @@ export default function TrainLineMap({ trains }) {
             if (!src || !tgt) return null;
             const x = lerp(src.distance * 12 + 20, tgt.distance * 12 + 20, train.progress);
             const y = lerp(src.elevation / 10, tgt.elevation / 10, train.progress);
-            console.log(x, y)
             const color = SIGNAL_COLOR[train.signal] ?? "#22c55e";
             const isDoubleAmber = train.signal === "double-amber";
             return (
