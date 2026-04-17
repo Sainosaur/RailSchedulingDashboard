@@ -30,13 +30,12 @@ export default function KillSwitchPanel({
 
   const statusBadge = (
     <span
-      className={`text-[10px] font-mono px-1.5 py-0.5 border ${
-        killed
-          ? "text-[var(--dash-kill)] border-[var(--dash-kill)]/40 bg-[var(--dash-kill)]/10"
-          : "text-[var(--dash-amber)] border-[var(--dash-amber)]/40 bg-[var(--dash-amber)]/10"
-      }`}
+      className={`text-[10px] font-mono px-1.5 py-0.5 border ${killed
+        ? "text-[var(--dash-kill)] border-[var(--dash-kill)]/40 bg-[var(--dash-kill)]/10"
+        : "text-[var(--dash-amber)] border-[var(--dash-amber)]/40 bg-[var(--dash-amber)]/10"
+        }`}
     >
-      {killed ? "KILLED" : "ARMED"}
+      {killed ? "KILLED" : "READY"}
     </span>
   );
 
@@ -44,7 +43,7 @@ export default function KillSwitchPanel({
     <>
       <PanelShell
         title="Kill Switch"
-        badge="H01"
+        badge=""
         actions={statusBadge}
         className="h-full"
       >
@@ -53,11 +52,10 @@ export default function KillSwitchPanel({
           {!killed && (
             <button
               onClick={handleKillClick}
-              className={`w-full py-4 px-4 border-2 font-bold tracking-[0.15em] uppercase text-sm font-mono transition-all duration-150 active:scale-[0.98] ${
-                confirmPending
-                  ? "border-[var(--dash-kill)] bg-[var(--dash-kill)]/30 text-white shadow-[0_0_24px_var(--dash-kill-glow)] animate-pulse"
-                  : "border-[var(--dash-kill)] bg-[var(--dash-kill)]/10 text-[var(--dash-kill)] hover:bg-[var(--dash-kill)]/20 hover:shadow-[0_0_20px_var(--dash-kill-glow)]"
-              }`}
+              className={`w-full py-4 px-4 border-2 font-bold tracking-[0.15em] uppercase text-sm font-mono transition-all duration-150 active:scale-[0.98] ${confirmPending
+                ? "border-[var(--dash-kill)] bg-[var(--dash-kill)]/30 text-white shadow-[0_0_24px_var(--dash-kill-glow)] animate-pulse"
+                : "border-[var(--dash-kill)] bg-[var(--dash-kill)]/10 text-[var(--dash-kill)] hover:bg-[var(--dash-kill)]/20 hover:shadow-[0_0_20px_var(--dash-kill-glow)]"
+                }`}
             >
               {confirmPending ? "CONFIRM KILL" : "KILL SWITCH"}
             </button>
