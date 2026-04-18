@@ -16,7 +16,7 @@ import TrainLineMap from "@/components/dashboard/TrainLineMap/TrainLineMap";
 import KillSwitchPanel from "@/components/dashboard/KillSwitchPanel/KillSwitchPanel";
 import RecommendationsPanel from "@/components/dashboard/RecommendationsPanel/RecommendationsPanel";
 import ApprovalsPanel from "@/components/dashboard/ApprovalsPanel/ApprovalsPanel";
-import LogsPanel from "@/components/dashboard/LogsPanel/LogsPanel";
+import TimetablePanel from "@/components/dashboard/TimetablePanel/TimetablePanel";
 import SimulationControlPanel from "@/components/dashboard/SimulationControlPanel/SimulationControlPanel";
 
 const simSocket = new WebSocket("ws://localhost:8000/ws/sim");
@@ -155,16 +155,21 @@ export default function App() {
       {/* Row 1: Train line map */}
       <TrainLineMap trains={trains} />
 
-      {/* Row 2: Four bottom panels */}
-      <div className="grid grid-cols-[250px_200px_1fr_450px_450px] gap-2 min-h-0">
-        <SimulationControlPanel />
-        <KillSwitchPanel
-          killed={killState.killed}
-          reason={killState.reason}
-          onKill={handleKill}
-          onRestore={handleRestore}
-          onReasonChange={handleReasonChange}
-        />
+      {/* Row 2: Bottom panels organized for better space usage */}
+      <div className="grid grid-cols-[280px_1fr_300px_500px] gap-2 min-h-0">
+        
+        {/* Controls Column (Stacked Vertically) */}
+        <div className="grid grid-rows-2 gap-2 min-h-0">
+          <KillSwitchPanel
+            killed={killState.killed}
+            reason={killState.reason}
+            onKill={handleKill}
+            onRestore={handleRestore}
+            onReasonChange={handleReasonChange}
+          />
+          <SimulationControlPanel />
+        </div>
+
         <RecommendationsPanel
           recommendations={recommendations}
           permissions={PERMISSIONS}
@@ -174,7 +179,7 @@ export default function App() {
           onApprove={handleApprove}
           onDeny={handleDeny}
         />
-        <LogsPanel logs={logs} />
+        <TimetablePanel />
       </div>
     </div>
   );

@@ -18,9 +18,5 @@ const holdLead = async () => {
     return res.data;
 }
 
-const leadStatus = async () => {
-    const res = await axios.get(`${BASE_URL}/status`);
-    return res.data;
-}
 
-export { stallLead, releaseLead, holdLead, leadStatus };
+export { stallLead, releaseLead, holdLead };
