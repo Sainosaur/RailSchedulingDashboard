@@ -25,21 +25,31 @@ export default function App() {
   const [killState, setKillState] = useState(INITIAL_KILL_SWITCH);
   const [logs, setLogs] = useState(LOGS);
   const [recommendations, setRecommendations] = useState(RECOMMENDATIONS);
-  const [trains, setTrains] = useState([])
-
-  simSocket.addEventListener("open", () => {
-    console.log("Backend connected (Simulation)")
-  })
-  simSocket.addEventListener("message", (event) => {
-    const data = JSON.parse(event.data)
-    const trainArr = [data.lead, data.ai]
-    setTrains(trainArr)
-  })
+  const [trains, setTrains] = useState([]);
+  const [timetable, setTimetable] = useState(null);
+  const [punctuality, setPunctuality] = useState(null);
+  const [leadState, setLeadState] = useState({ stalled: false, held: false });
 
   useEffect(() => {
+    simSocket.onopen = () => console.log("Backend connected (Simulation)");
+
+    const handleMessage = (event) => {
+      const data = JSON.parse(event.data);
+      if (data.type === "sim_update") {
+        setTrains([data.lead, data.ai]);
+        setTimetable(data.timetable);
+        setPunctuality(data.punctuality);
+        setLeadState({ stalled: data.lead.stalled, held: data.lead.held });
+      }
+    };
+    
+    simSocket.addEventListener("message", handleMessage);
+
     getKillStatus().then((status) => {
       setKillState(status);
     });
+
+    return () => simSocket.removeEventListener("message", handleMessage);
   }, []);
 
   const handleKill = () => {
@@ -156,10 +166,10 @@ export default function App() {
       <TrainLineMap trains={trains} />
 
       {/* Row 2: Bottom panels organized for better space usage */}
-      <div className="grid grid-cols-[280px_1fr_300px_500px] gap-2 min-h-0">
+      <div className="grid grid-cols-[280px_1fr_1fr_1fr] gap-2 min-h-0">
         
         {/* Controls Column (Stacked Vertically) */}
-        <div className="grid grid-rows-2 gap-2 min-h-0">
+        <div className="grid grid-rows-[auto_1fr] gap-2 min-h-0">
           <KillSwitchPanel
             killed={killState.killed}
             reason={killState.reason}
@@ -167,7 +177,7 @@ export default function App() {
             onRestore={handleRestore}
             onReasonChange={handleReasonChange}
           />
-          <SimulationControlPanel />
+          <SimulationControlPanel stalled={leadState.stalled} held={leadState.held} />
         </div>
 
         <RecommendationsPanel
@@ -179,7 +189,7 @@ export default function App() {
           onApprove={handleApprove}
           onDeny={handleDeny}
         />
-        <TimetablePanel />
+        <TimetablePanel timetable={timetable || undefined} punctuality={punctuality || undefined} />
       </div>
     </div>
   );

@@ -4,15 +4,8 @@ import Tooltip from "@/components/ui/Tooltip";
 import { startSimulation, stopSimulation, simStatus } from "@/services/simulation";
 import { stallLead, releaseLead, holdLead } from "@/services/LeadControl";
 
-const leadSocket = new WebSocket("ws://localhost:8000/ws/lead/status");
-
-
-export default function SimulationControlPanel({
-}) {
+export default function SimulationControlPanel({ stalled, held }) {
   const [running, setRunning] = useState(false);
-
-  const [stalled, setStalled] = useState(false);
-  const [held, setHeld] = useState(false);
 
   // Initial state fetch
   useEffect(() => {
@@ -24,13 +17,6 @@ export default function SimulationControlPanel({
         setRunning(false);
       });
   }, []);
-  leadSocket.addEventListener("open", () => {
-  });
-  leadSocket.addEventListener("message", (event) => {
-    const data = JSON.parse(event.data);
-    setStalled(data.stalled);
-    setHeld(data.held);
-  });
 
 
   function handleToggle() {
