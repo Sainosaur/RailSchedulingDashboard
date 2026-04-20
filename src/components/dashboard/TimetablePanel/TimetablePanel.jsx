@@ -44,7 +44,7 @@ export default function TimetablePanel({ timetable, punctuality }) {
           </thead>
           <tbody className="text-[var(--dash-text-bright)]">
             {(!timetable || timetable.length === 0 || timetable.error) ? (
-              <tr><td colSpan={4} className="text-center py-4">Waiting for simulation to start...</td></tr>
+              <tr><td colSpan={4} className="text-center py-4">Timetable cannot be found! Ensure a simulation is currently running</td></tr>
             ) : timetable.map((entry) => {
               const isPast = typeof punctuality?.ai?.arrival_log?.[entry.station_idx] !== "undefined";
               const isNext = punctuality?.ai?.next_station_idx === entry.station_idx;
