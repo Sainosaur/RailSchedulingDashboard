@@ -1,120 +1,128 @@
 import { useState, useEffect } from "react";
 import "./App.css";
-import {
-  INITIAL_KILL_SWITCH,
-  RECOMMENDATIONS,
-  PERMISSIONS,
-  LOGS,
-} from "@/data/railData";
+import { INITIAL_KILL_SWITCH } from "@/data/railData";
 
 import {
   killServer,
   restoreServer,
   getKillStatus,
 } from "@/services/killSwitch";
+import axios from "axios";
 import TrainLineMap from "@/components/dashboard/TrainLineMap/TrainLineMap";
 import KillSwitchPanel from "@/components/dashboard/KillSwitchPanel/KillSwitchPanel";
-import RecommendationsPanel from "@/components/dashboard/RecommendationsPanel/RecommendationsPanel";
-import ApprovalsPanel from "@/components/dashboard/ApprovalsPanel/ApprovalsPanel";
+import OverrideLogPanel from "@/components/dashboard/OverrideLogPanel/OverrideLogPanel";
+import StatsPanel from "@/components/dashboard/StatsPanel/StatsPanel";
 import TimetablePanel from "@/components/dashboard/TimetablePanel/TimetablePanel";
 import SimulationControlPanel from "@/components/dashboard/SimulationControlPanel/SimulationControlPanel";
+import StopwatchPanel from "@/components/dashboard/StopwatchPanel/StopwatchPanel";
+import { simStatus } from "@/services/simulation";
 
 const simSocket = new WebSocket("ws://localhost:8000/ws/sim");
+const logSocket = new WebSocket("ws://localhost:8000/ws/logs");
 
 export default function App() {
   const [killState, setKillState] = useState(INITIAL_KILL_SWITCH);
-  const [logs, setLogs] = useState(LOGS);
-  const [recommendations, setRecommendations] = useState(RECOMMENDATIONS);
+  const [logs, setLogs] = useState([]);
+  const [aiStats, setAiStats] = useState(null);
   const [trains, setTrains] = useState([]);
   const [timetable, setTimetable] = useState(null);
   const [punctuality, setPunctuality] = useState(null);
   const [leadState, setLeadState] = useState({ stalled: false, held: false });
+  const [simTime, setSimTime] = useState(0);
+  const [isRunning, setIsRunning] = useState(false);
 
   useEffect(() => {
     simSocket.onopen = () => console.log("Backend connected (Simulation)");
+    logSocket.onopen = () => console.log("Backend connected (Logs)");
 
-    const handleMessage = (event) => {
+    const handleSimMessage = (event) => {
       const data = JSON.parse(event.data);
       if (data.type === "sim_update") {
         setTrains([data.lead, data.ai]);
-        setTimetable(data.timetable);
-        setPunctuality(data.punctuality);
+        setAiStats(data.ai);
+        if (data.timetable) setTimetable(data.timetable);
+        if (data.punctuality) setPunctuality(data.punctuality);
         setLeadState({ stalled: data.lead.stalled, held: data.lead.held });
+        setSimTime(data.time);
+        setIsRunning(true);
       }
     };
-    
-    simSocket.addEventListener("message", handleMessage);
+
+    const handleLogMessage = (event) => {
+      const data = JSON.parse(event.data);
+      if (data.type === "log_update") {
+        const fetchedLogs = data.logs.map((l, index) => {
+          const isStation = l.constraint_id === "Station_Approach_Override";
+
+          let levelStr = l.constraint_id || "SAFETY";
+          if (levelStr === "Station_Approach_Override") {
+            levelStr = "STATION APPROACH";
+          } else if (levelStr.includes("_Limit")) {
+            levelStr = "SPEED LIMIT";
+          } else if (levelStr === "Aspect_Spatial_Violation" || levelStr === "Kinematic_Target_Violation") {
+            levelStr = "HAZARD";
+          } else if (levelStr === "Hardware_Limit_Clamp") {
+            levelStr = "HARDWARE LIMIT";
+          } else if (levelStr === "Track_Bounds_Violation") {
+            levelStr = "TRACK BOUNDS";
+          } else {
+            levelStr = levelStr.replace(/_Override/gi, '').replace(/_/g, ' ').toUpperCase();
+          }
+
+          return {
+            id: `L-${l.timestamp}-${index}`,
+            timestamp: new Date(
+              parseFloat(l.timestamp) * 1000,
+            ).toLocaleTimeString(),
+            level: levelStr,
+            source: isStation ? "STATION" : "VLS",
+            message: `Violation: AI (a)=${parseFloat(l.original_ppo_a).toFixed(2)} (m/s^2) VL (a)=${parseFloat(l.corrected_a).toFixed(2)} m/s^2`,
+          };
+        });
+        setLogs(fetchedLogs);
+      }
+    };
+
+    simSocket.addEventListener("message", handleSimMessage);
+    logSocket.addEventListener("message", handleLogMessage);
 
     getKillStatus().then((status) => {
       setKillState(status);
     });
 
-    return () => simSocket.removeEventListener("message", handleMessage);
+    simStatus().then((status) => {
+      setIsRunning(status.status);
+    });
+
+    return () => {
+      simSocket.removeEventListener("message", handleSimMessage);
+      logSocket.removeEventListener("message", handleLogMessage);
+    };
   }, []);
 
   const handleKill = () => {
-    const now = new Date();
-    const ts = now.toTimeString().slice(0, 8);
     killServer()
       .then(() => {
         setKillState((prev) => ({
           ...prev,
           killed: true,
         }));
-        setLogs((prev) => [
-          ...prev,
-          {
-            id: `L-${Date.now()}`,
-            timestamp: ts,
-            level: "ERROR",
-            source: "SYS",
-            message: "Kill switch activated — all services halted",
-          },
-        ]);
       })
       .catch(() => {
-        setLogs([
-          {
-            id: `L-${Date.now()}`,
-            timestamp: ts,
-            level: "ERROR",
-            source: "SYS",
-            message: "Catostrophic Connection Failure!",
-          },
-        ]);
+        console.error("Kill failed");
       });
   };
 
   function handleRestore() {
-    const now = new Date();
-    const ts = now.toTimeString().slice(0, 8);
     restoreServer()
       .then(() => {
         setKillState((prev) => ({
           ...prev,
           killed: false,
         }));
-        setLogs((prev) => [
-          ...prev,
-          {
-            id: `L-${Date.now()}`,
-            timestamp: ts,
-            level: "INFO",
-            source: "SYS",
-            message: "Service restored by operator",
-          },
-        ]);
       })
       .catch(() => {
-        setLogs([
-          {
-            id: `L-${Date.now()}`,
-            timestamp: ts,
-            level: "ERROR",
-            source: "SYS",
-            message: "Catostrophic Connection Failure!",
-          },
-        ]);
+        console.error("Restore failed");
       });
   }
 
@@ -122,42 +130,13 @@ export default function App() {
     setKillState((prev) => ({ ...prev, reason }));
   }
 
-  function handleApprove(id) {
-    const now = new Date();
-    const ts = now.toTimeString().slice(0, 8);
-    const rec = recommendations.find((r) => r.id === id);
-    setRecommendations((prev) =>
-      prev.map((r) => (r.id === id ? { ...r, status: "applied" } : r)),
-    );
-    setLogs((prev) => [
-      ...prev,
-      {
-        id: `L-${Date.now()}`,
-        timestamp: ts,
-        level: "INFO",
-        source: rec?.station ?? "SYS",
-        message: `${id} approved — ${rec?.type ?? "action"} applied`,
-      },
-    ]);
-  }
-
-  function handleDeny(id) {
-    const now = new Date();
-    const ts = now.toTimeString().slice(0, 8);
-    const rec = recommendations.find((r) => r.id === id);
-    setRecommendations((prev) =>
-      prev.map((r) => (r.id === id ? { ...r, status: "denied" } : r)),
-    );
-    setLogs((prev) => [
-      ...prev,
-      {
-        id: `L-${Date.now()}`,
-        timestamp: ts,
-        level: "WARN",
-        source: rec?.station ?? "SYS",
-        message: `${id} denied — ${rec?.type ?? "action"} not applied`,
-      },
-    ]);
+  function handleResetLogs() {
+    axios
+      .post("http://localhost:8000/api/dashboard/logs/reset")
+      .then(() => {
+        setLogs([]);
+      })
+      .catch((err) => console.error("Log reset failed", err));
   }
 
   return (
@@ -167,7 +146,6 @@ export default function App() {
 
       {/* Row 2: Bottom panels organized for better space usage */}
       <div className="grid grid-cols-[280px_1fr_1fr_1fr] gap-2 min-h-0">
-        
         {/* Controls Column (Stacked Vertically) */}
         <div className="grid grid-rows-[auto_1fr] gap-2 min-h-0">
           <KillSwitchPanel
@@ -177,19 +155,28 @@ export default function App() {
             onRestore={handleRestore}
             onReasonChange={handleReasonChange}
           />
-          <SimulationControlPanel stalled={leadState.stalled} held={leadState.held} />
+          <SimulationControlPanel
+            stalled={leadState.stalled}
+            held={leadState.held}
+          />
         </div>
 
-        <RecommendationsPanel
-          recommendations={recommendations}
-          permissions={PERMISSIONS}
-        />
-        <ApprovalsPanel
-          recommendations={recommendations}
-          onApprove={handleApprove}
-          onDeny={handleDeny}
-        />
-        <TimetablePanel timetable={timetable || undefined} punctuality={punctuality || undefined} />
+        <OverrideLogPanel logs={logs} onReset={handleResetLogs} />
+        <StatsPanel aiStats={aiStats} />
+
+        <div className="flex flex-col gap-2 min-h-0">
+          <div className="flex-1 min-h-0">
+            <TimetablePanel
+              timetable={timetable || undefined}
+              punctuality={punctuality || undefined}
+            />
+          </div>
+          <StopwatchPanel
+            simTime={simTime}
+            isRunning={isRunning}
+            onSimChange={setIsRunning}
+          />
+        </div>
       </div>
     </div>
   );
